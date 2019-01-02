@@ -84,12 +84,12 @@ for dep in departments:
     dfCof.loc[:, 'Segmentation'] = dfCof['Score'].map(segments)
 # Create data stamps for dataframe and append to consolidated dataframe:
     dfCof.loc[:, 'Timestamp'] = now
-    dfCof.loc[:, 'Type'] = scriptName + dep
+    dfCof.loc[:, 'Type'] = scriptName + '/' + dep
     dfCof.loc[:, 'ExecutionId'] = executionId
     dfCons = pd.concat([dfCons, dfCof])
 # Append quantiles to dataframe
     dfTemp = pd.DataFrame.from_dict(quantiles)
-    dfTemp.loc[:, 'Type'] = scriptName + dep
+    dfTemp.loc[:, 'Type'] = scriptName + '/' +  dep
     dfTemp.loc[:, 'Quantile'] = dfTemp.index
     dfQuan = pd.concat([dfTemp, dfQuan], sort=False)
     dfQuan.loc[:, 'Timestamp'] = now
@@ -103,7 +103,7 @@ dfNoSales = df.loc[df['Count'] == 0]
 dfNoSales.loc[:, 'Timestamp'] = now
 dfNoSales.loc[:, 'Score'] = dfNoSales['Days'].apply(lambda x: 0 if x > 90 else 1)
 dfNoSales.loc[:, 'Segmentation'] = dfNoSales['Score'].map(segments)
-dfNoSales.loc[:, 'Type'] = scriptName + dfNoSales['Department']
+dfNoSales.loc[:, 'Type'] = scriptName + '/' +  dfNoSales['Department']
 dfNoSales.loc[:, 'ExecutionId'] = executionId
 
 # =============================================================================
