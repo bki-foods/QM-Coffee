@@ -59,6 +59,7 @@ segments = {11: 'Cash cow', 12: 'Star', 13: 'Potential star', 14: 'Promising',
 
 # Get todays date and define lists of unique values for loops:
 now = datetime.datetime.now()
+scriptName = 'QM_Cofee.py'
 executionId = now.timestamp() * 1000000
 departments = df.Department.unique()
 
@@ -83,12 +84,12 @@ for dep in departments:
     dfCof.loc[:, 'Segmentation'] = dfCof['Score'].map(segments)
 # Create data stamps for dataframe and append to consolidated dataframe:
     dfCof.loc[:, 'Timestamp'] = now
-    dfCof.loc[:, 'Type'] = dep + ' QM seg'
+    dfCof.loc[:, 'Type'] = scriptName + dep
     dfCof.loc[:, 'ExecutionId'] = executionId
     dfCons = pd.concat([dfCons, dfCof])
 # Append quantiles to dataframe
     dfTemp = pd.DataFrame.from_dict(quantiles)
-    dfTemp.loc[:, 'Type'] = 'QM SEG - ' + dep
+    dfTemp.loc[:, 'Type'] = scriptName + dep
     dfTemp.loc[:, 'Quantile'] = dfTemp.index
     dfQuan = pd.concat([dfTemp, dfQuan], sort=False)
     dfQuan.loc[:, 'Timestamp'] = now
@@ -102,7 +103,7 @@ dfNoSales = df.loc[df['Count'] == 0]
 dfNoSales.loc[:, 'Timestamp'] = now
 dfNoSales.loc[:, 'Score'] = dfNoSales['Days'].apply(lambda x: 0 if x > 90 else 1)
 dfNoSales.loc[:, 'Segmentation'] = dfNoSales['Score'].map(segments)
-dfNoSales.loc[:, 'Type'] = 'QM SEG - ' + dfNoSales['Department']
+dfNoSales.loc[:, 'Type'] = scriptName + dfNoSales['Department']
 dfNoSales.loc[:, 'ExecutionId'] = executionId
 
 # =============================================================================
@@ -123,7 +124,7 @@ dfQuan = dfQuan[ColsQuan]
 # =============================================================================
 #                               Dataframe for logging
 # =============================================================================
-dfLog = pd.DataFrame(data= {'Date': now, 'Event': 'QM segmentation'}, index=[0])
+dfLog = pd.DataFrame(data= {'Date': now, 'Event': scriptName}, index=[0])
 # =============================================================================
 #                               Insert SQL
 # =============================================================================
