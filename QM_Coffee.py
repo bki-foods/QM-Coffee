@@ -54,7 +54,7 @@ def qm_score(x, para, dic):
 segments = {11: 'Cash cow', 12: 'Star', 13: 'Potential star', 14: 'Promising',
             21: 'Star', 22: 'Star', 23: 'Potential star', 24: 'Promising',
             31: 'At risk', 32: 'At risk', 33: 'Hibernating', 34: 'Phase out',
-            41: 'Critical attention', 42: 'At risk', 43: 'Phase out', 
+            41: 'Critical attention', 42: 'At risk', 43: 'Phase out',
             44: 'Phase out', 0: 'Dead stock', 1: 'New item'}
 
 # Get todays date and define lists of unique values for loops:
@@ -78,8 +78,8 @@ for dep in departments:
     dfCof.loc[:, 'QuantityQuartile'] = dfCof['Quantity'].apply(qm_score, args=('Quantity', quantiles,))
     dfCof.loc[:, 'MonetaryQuartile'] = dfCof['MonetaryValue'].apply(qm_score, args=('MonetaryValue', quantiles,))
 # Concetenate Quartile measurements to single string:
-    dfCof.loc[:, 'Score'] = (dfCof.QuantityQuartile.map(str)
-                    + dfCof.MonetaryQuartile.map(str)).astype(int)
+    dfCof.loc[:, 'Score'] = (dfCof.QuantityQuartile.map(str) +
+                             dfCof.MonetaryQuartile.map(str)).astype(int)
 # Create segmentation code and look up translation in dictionary:
     dfCof.loc[:, 'Segmentation'] = dfCof['Score'].map(segments)
 # Create data stamps for dataframe and append to consolidated dataframe:
@@ -113,7 +113,7 @@ ColsCof = (['ExecutionId', 'Timestamp', 'ItemNo', 'Quantity', 'MonetaryValue',
             'QuantityQuartile', 'MonetaryQuartile', 'Score', 'Segmentation',
             'Type'])
 ColsNoS = (['ExecutionId', 'Timestamp', 'ItemNo', 'Score',
-           'Segmentation', 'Type'])
+            'Segmentation', 'Type'])
 ColsQuan = (['ExecutionId', 'Timestamp', 'Type', 'Quantile', 'Quantity',
              'MonetaryValue'])
 
@@ -124,7 +124,7 @@ dfQuan = dfQuan[ColsQuan]
 # =============================================================================
 #                               Dataframe for logging
 # =============================================================================
-dfLog = pd.DataFrame(data= {'Date': now, 'Event': scriptName}, index=[0])
+dfLog = pd.DataFrame(data= {'Date':now, 'Event':scriptName}, index=[0])
 # =============================================================================
 #                               Insert SQL
 # =============================================================================
