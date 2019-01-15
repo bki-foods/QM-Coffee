@@ -15,20 +15,24 @@ query = """SELECT V.[Varenr] AS [ItemNo], V.[Udmeldelsesstatus] AS [Status]
         ,V.[Vareansvar] AS [Department], SVP.[KG], SVP.[Amount]
         ,SVP.[Cost], ISNULL(SVP.[Count],0)  AS [Count]
         ,V.[Dage siden oprettelse] AS [Days]
+		,CASE WHEN V.[Produktionskode] NOT LIKE '%HB%' THEN 'FORM' 
+            ELSE 'HB' END AS [CType]
         FROM [TXprodDWH].[dbo].[Vare_V] AS V
-        LEFT JOIN (SELECT [Varenr], SUM(ISNULL([AntalKgKaffe],0)) AS [KG]
+        LEFT JOIN (
+        SELECT [Varenr], SUM(ISNULL([AntalKgKaffe],0)) AS [KG]
         ,SUM([Oms excl. kampagneAnnonce]) AS [Amount]
         ,SUM([Kostbeløb]) AS [Cost], COUNT(*) AS [Count]
         FROM [factSTATISTIK VAREPOST_V]
         WHERE [VarePosttype] IN (-1, 1)
-        AND [Bogføringsdato] >= DATEADD(year, -1, getdate())
-        GROUP BY [Varenr]) AS SVP
+            AND [Bogføringsdato] >= DATEADD(year, -1, getdate())
+        GROUP BY [Varenr]
+        ) AS SVP
         ON V.[Varenr] = SVP.[Varenr]
         WHERE V.[Varekategorikode] = 'FÆR KAFFE'
-        AND V.[Varenr] NOT LIKE '9%'
-        AND V.[Rabatnr] = 'Nej'
-        AND V.[Salgsvare] = 'Ja'
-        AND V.[Udmeldelsesstatus] = ''"""
+            AND V.[Varenr] NOT LIKE '9%'
+            AND V.[Rabatnr] = 'Nej'
+            AND V.[Salgsvare] = 'Ja'
+            AND V.[Udmeldelsesstatus] = '' """
 
 # Read query and create Profit calculation:
 df = pd.read_sql(query, con)
@@ -51,10 +55,11 @@ def qm_score(x, para, dic):
 
 
 # Define segment translation (Q, M):
-segments = {11: 'Cash cow', 12: 'Star', 13: 'Potential star', 14: 'Promising',
-            21: 'Star', 22: 'Star', 23: 'Potential star', 24: 'Promising',
-            31: 'At risk', 32: 'At risk', 33: 'Hibernating', 34: 'Phase out',
-            41: 'Critical attention', 42: 'At risk', 43: 'Phase out',
+segments = {11: 'Star', 12: 'Cost potential', 13: 'Cost potential',
+            14: 'Critical attention', 21: 'Potential star', 22: 'Cost potential',
+            23: 'Cost potential', 24: 'Critical attention', 31: 'Volume potential',
+            32: 'Volume potential', 33: 'Potential', 34: 'Potential',
+            41: 'Volume potential', 42: 'Volume potential', 43: 'Potential',
             44: 'Phase out', 0: 'Dead stock', 1: 'New item'}
 
 # Get todays date and define lists of unique values for loops:
@@ -62,6 +67,7 @@ now = datetime.datetime.now()
 scriptName = 'QM_Cofee.py'
 executionId = now.timestamp() * 1000000
 departments = df.Department.unique()
+coffeeTypes = df.CType.unique()
 
 # =============================================================================
 #                        SKUs with sales
@@ -69,31 +75,33 @@ departments = df.Department.unique()
 dfSales = df.loc[df['Count'] != 0]
 
 for dep in departments:
-# Create Coffee dataframe, calculations and rename columns:
-    dfCof = dfSales.loc[dfSales['Department'] == dep]
-    dfCof.rename(columns={'KG': 'Quantity', 'Profit': 'MonetaryValue'}, inplace=True)
-# Define quantiles for dfPro dataframe:
-    quantiles = dfCof.quantile(q=[0.25, 0.5, 0.75]).to_dict()
-# Identify quartiles per measure for each product:
-    dfCof.loc[:, 'QuantityQuartile'] = dfCof['Quantity'].apply(qm_score, args=('Quantity', quantiles,))
-    dfCof.loc[:, 'MonetaryQuartile'] = dfCof['MonetaryValue'].apply(qm_score, args=('MonetaryValue', quantiles,))
-# Concetenate Quartile measurements to single string:
-    dfCof.loc[:, 'Score'] = (dfCof.QuantityQuartile.map(str) +
-                             dfCof.MonetaryQuartile.map(str)).astype(int)
-# Create segmentation code and look up translation in dictionary:
-    dfCof.loc[:, 'Segmentation'] = dfCof['Score'].map(segments)
-# Create data stamps for dataframe and append to consolidated dataframe:
-    dfCof.loc[:, 'Timestamp'] = now
-    dfCof.loc[:, 'Type'] = scriptName + '/' + dep
-    dfCof.loc[:, 'ExecutionId'] = executionId
-    dfCons = pd.concat([dfCons, dfCof])
-# Append quantiles to dataframe
-    dfTemp = pd.DataFrame.from_dict(quantiles)
-    dfTemp.loc[:, 'Type'] = scriptName + '/' +  dep
-    dfTemp.loc[:, 'Quantile'] = dfTemp.index
-    dfQuan = pd.concat([dfTemp, dfQuan], sort=False)
-    dfQuan.loc[:, 'Timestamp'] = now
-    dfQuan.loc[:, 'ExecutionId'] = executionId
+    for cType in coffeeTypes:
+    # Create Coffee dataframe, calculations and rename columns:
+        dfCof = dfSales.loc[dfSales['Department'] == dep]
+        dfCof = dfCof.loc[dfCof['CType'] == cType]
+        dfCof.rename(columns={'KG': 'Quantity', 'Profit': 'MonetaryValue'}, inplace=True)
+    # Define quantiles for dfPro dataframe:
+        quantiles = dfCof.quantile(q=[0.25, 0.5, 0.75]).to_dict()
+    # Identify quartiles per measure for each product:
+        dfCof.loc[:, 'QuantityQuartile'] = dfCof['Quantity'].apply(qm_score, args=('Quantity', quantiles,))
+        dfCof.loc[:, 'MonetaryQuartile'] = dfCof['MonetaryValue'].apply(qm_score, args=('MonetaryValue', quantiles,))
+    # Concetenate Quartile measurements to single string:
+        dfCof.loc[:, 'Score'] = (dfCof.QuantityQuartile * 10 +
+                                 dfCof.MonetaryQuartile)
+    # Create segmentation code and look up translation in dictionary:
+        dfCof.loc[:, 'Segmentation'] = dfCof['Score'].map(segments)
+    # Create data stamps for dataframe and append to consolidated dataframe:
+        dfCof.loc[:, 'Timestamp'] = now
+        dfCof.loc[:, 'Type'] = scriptName + '/' + dep + '/' + cType
+        dfCof.loc[:, 'ExecutionId'] = executionId
+        dfCons = pd.concat([dfCons, dfCof])
+    # Append quantiles to dataframe
+        dfTemp = pd.DataFrame.from_dict(quantiles)
+        dfTemp.loc[:, 'Type'] = scriptName + '/' +  dep + '/' + cType
+        dfTemp.loc[:, 'Quantile'] = dfTemp.index
+        dfQuan = pd.concat([dfTemp, dfQuan], sort=False)
+        dfQuan.loc[:, 'Timestamp'] = now
+        dfQuan.loc[:, 'ExecutionId'] = executionId
 
 # =============================================================================
 #                        SKUs without sales
@@ -103,7 +111,7 @@ dfNoSales = df.loc[df['Count'] == 0]
 dfNoSales.loc[:, 'Timestamp'] = now
 dfNoSales.loc[:, 'Score'] = dfNoSales['Days'].apply(lambda x: 0 if x > 90 else 1)
 dfNoSales.loc[:, 'Segmentation'] = dfNoSales['Score'].map(segments)
-dfNoSales.loc[:, 'Type'] = scriptName + '/' +  dfNoSales['Department']
+dfNoSales.loc[:, 'Type'] = scriptName + '/' +  dfNoSales['Department'] + '/' + dfNoSales['CType']
 dfNoSales.loc[:, 'ExecutionId'] = executionId
 
 # =============================================================================
