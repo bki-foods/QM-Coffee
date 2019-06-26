@@ -81,12 +81,13 @@ for dep in departments:
         dfCof.loc[:, 'Score'] = dfCof.QuantityQuartile * 10 + dfCof.MonetaryQuartile
 # Create data stamps for dataframe and append to consolidated dataframe:
         dfCof.loc[:, 'Timestamp'] = now
-        dfCof.loc[:, 'Type'] = scriptName + '/' + dep + '/' + cType
+        dfCof.loc[:, 'Type'] = dep + '/' + cType
         dfCof.loc[:, 'ExecutionId'] = executionId
+        dfCof.loc[:, 'Script'] = scriptName       
         dfCons = pd.concat([dfCons, dfCof])
 # Append quantiles to dataframe
         dfTemp = pd.DataFrame.from_dict(quantiles)
-        dfTemp.loc[:, 'Type'] = scriptName + '/' +  dep + '/' + cType
+        dfTemp.loc[:, 'Type'] = dep + '/' + cType
         dfTemp.loc[:, 'Quantile'] = dfTemp.index
         dfQuan = pd.concat([dfTemp, dfQuan], sort=False)
         dfQuan.loc[:, 'Timestamp'] = now
@@ -99,15 +100,15 @@ dfNoSales = df.loc[df['Count'] == 0]
 
 dfNoSales.loc[:, 'Timestamp'] = now
 dfNoSales.loc[:, 'Score'] = dfNoSales['Days'].apply(lambda x: 0 if x > 90 else 1)
-dfNoSales.loc[:, 'Type'] = scriptName + '/' +  dfNoSales['Department'] + '/' + dfNoSales['CType']
+dfNoSales.loc[:, 'Type'] = dfNoSales['Department'] + '/' + dfNoSales['CType']
 dfNoSales.loc[:, 'ExecutionId'] = executionId
+dfNoSales.loc[:, 'Script'] = scriptName
 
 # =============================================================================
 #                       Prepare dataframes for SQL insert
 # =============================================================================
-ColsCof = (['ExecutionId', 'Timestamp', 'ItemNo', 'Quantity', 'MonetaryValue',
-            'QuantityQuartile', 'MonetaryQuartile', 'Score','Type'])
-ColsNoS = (['ExecutionId', 'Timestamp', 'ItemNo', 'Score', 'Type'])
+ColsCof = ['ExecutionId', 'Timestamp', 'ItemNo', 'Quantity', 'MonetaryValue', 'Score','Type', 'Script']
+ColsNoS = ['ExecutionId', 'Timestamp', 'ItemNo', 'Score', 'Type', 'Script']
 ColsQuan = (['ExecutionId', 'Timestamp', 'Type', 'Quantile', 'Quantity',
              'MonetaryValue'])
 
