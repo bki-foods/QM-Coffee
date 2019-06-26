@@ -83,7 +83,7 @@ for dep in departments:
         dfCof.loc[:, 'Timestamp'] = now
         dfCof.loc[:, 'Type'] = dep + '/' + cType
         dfCof.loc[:, 'ExecutionId'] = executionId
-        dfCof.loc[:, 'Script'] = scriptName       
+        dfCof.loc[:, 'Script'] = scriptName
         dfCons = pd.concat([dfCons, dfCof])
 # Append quantiles to dataframe
         dfTemp = pd.DataFrame.from_dict(quantiles)
@@ -107,7 +107,7 @@ dfNoSales.loc[:, 'Script'] = scriptName
 # =============================================================================
 #                       Prepare dataframes for SQL insert
 # =============================================================================
-ColsCof = ['ExecutionId', 'Timestamp', 'ItemNo', 'Quantity', 'MonetaryValue', 'Score','Type', 'Script']
+ColsCof = ['ExecutionId', 'Timestamp', 'ItemNo', 'Quantity', 'MonetaryValue', 'Score', 'Type', 'Script']
 ColsNoS = ['ExecutionId', 'Timestamp', 'ItemNo', 'Score', 'Type', 'Script']
 ColsQuan = (['ExecutionId', 'Timestamp', 'Type', 'Quantile', 'Quantity',
              'MonetaryValue'])
