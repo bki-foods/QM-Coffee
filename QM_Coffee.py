@@ -54,14 +54,6 @@ def qm_score(x, para, dic):
         return 1
 
 
-# Define segment translation (Q, M):
-segments = {11: 'Star', 12: 'Cost potential', 13: 'Cost potential',
-            14: 'Critical attention', 21: 'Potential star', 22: 'Cost potential',
-            23: 'Cost potential', 24: 'Critical attention', 31: 'Volume potential',
-            32: 'Volume potential', 33: 'Potential', 34: 'Potential',
-            41: 'Volume potential', 42: 'Volume potential', 43: 'Potential',
-            44: 'Phase out', 0: 'Dead stock', 1: 'New item'}
-
 # Get todays date and define lists of unique values for loops:
 now = datetime.datetime.now()
 scriptName = 'QM_Cofee.py'
@@ -86,10 +78,7 @@ for dep in departments:
         dfCof.loc[:, 'QuantityQuartile'] = dfCof['Quantity'].apply(qm_score, args=('Quantity', quantiles,))
         dfCof.loc[:, 'MonetaryQuartile'] = dfCof['MonetaryValue'].apply(qm_score, args=('MonetaryValue', quantiles,))
 # Concetenate Quartile measurements to single string:
-        dfCof.loc[:, 'Score'] = (dfCof.QuantityQuartile * 10 +
-                                 dfCof.MonetaryQuartile)
-# Create segmentation code and look up translation in dictionary:
-        dfCof.loc[:, 'Segmentation'] = dfCof['Score'].map(segments)
+        dfCof.loc[:, 'Score'] = dfCof.QuantityQuartile * 10 + dfCof.MonetaryQuartile
 # Create data stamps for dataframe and append to consolidated dataframe:
         dfCof.loc[:, 'Timestamp'] = now
         dfCof.loc[:, 'Type'] = scriptName + '/' + dep + '/' + cType
@@ -110,7 +99,6 @@ dfNoSales = df.loc[df['Count'] == 0]
 
 dfNoSales.loc[:, 'Timestamp'] = now
 dfNoSales.loc[:, 'Score'] = dfNoSales['Days'].apply(lambda x: 0 if x > 90 else 1)
-dfNoSales.loc[:, 'Segmentation'] = dfNoSales['Score'].map(segments)
 dfNoSales.loc[:, 'Type'] = scriptName + '/' +  dfNoSales['Department'] + '/' + dfNoSales['CType']
 dfNoSales.loc[:, 'ExecutionId'] = executionId
 
@@ -118,10 +106,8 @@ dfNoSales.loc[:, 'ExecutionId'] = executionId
 #                       Prepare dataframes for SQL insert
 # =============================================================================
 ColsCof = (['ExecutionId', 'Timestamp', 'ItemNo', 'Quantity', 'MonetaryValue',
-            'QuantityQuartile', 'MonetaryQuartile', 'Score', 'Segmentation',
-            'Type'])
-ColsNoS = (['ExecutionId', 'Timestamp', 'ItemNo', 'Score',
-            'Segmentation', 'Type'])
+            'QuantityQuartile', 'MonetaryQuartile', 'Score','Type'])
+ColsNoS = (['ExecutionId', 'Timestamp', 'ItemNo', 'Score', 'Type'])
 ColsQuan = (['ExecutionId', 'Timestamp', 'Type', 'Quantile', 'Quantity',
              'MonetaryValue'])
 
