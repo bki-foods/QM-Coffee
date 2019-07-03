@@ -17,6 +17,7 @@ query = """SELECT V.[Varenr] AS [ItemNo], V.[Udmeldelsesstatus] AS [Status]
         ,V.[Dage siden oprettelse] AS [Days]
 		,CASE WHEN V.[Produktionskode] NOT LIKE '%HB%' THEN 'FORM' 
             ELSE 'HB' END AS [CType]
+        ,V.[Udmeldelsesstatus]
         FROM [TXprodDWH].[dbo].[Vare_V] AS V
         LEFT JOIN (
         SELECT [Varenr], SUM(ISNULL([AntalKgKaffe],0)) AS [KG]
@@ -31,8 +32,7 @@ query = """SELECT V.[Varenr] AS [ItemNo], V.[Udmeldelsesstatus] AS [Status]
         WHERE V.[Varekategorikode] = 'FÆR KAFFE'
             AND V.[Varenr] NOT LIKE '9%'
             AND V.[Rabatnr] = 'Nej'
-            AND V.[Salgsvare] = 'Ja'
-            AND V.[Udmeldelsesstatus] = '' """
+            AND V.[Salgsvare] = 'Ja' """
 
 # Read query and create Profit calculation:
 df = pd.read_sql(query, con)
@@ -100,6 +100,7 @@ dfNoSales = df.loc[df['Count'] == 0]
 
 dfNoSales.loc[:, 'Timestamp'] = now
 dfNoSales.loc[:, 'Score'] = dfNoSales['Days'].apply(lambda x: 0 if x > 90 else 1)
+dfNoSales.loc[dfNoSales['Udmeldelsesstatus'] == 'Er udgået', 'Score'] = 2
 dfNoSales.loc[:, 'Type'] = dfNoSales['Department'] + '/' + dfNoSales['CType']
 dfNoSales.loc[:, 'ExecutionId'] = executionId
 dfNoSales.loc[:, 'Script'] = scriptName
@@ -123,10 +124,10 @@ dfLog = pd.DataFrame(data= {'Date':now, 'Event':scriptName}, index=[0])
 # =============================================================================
 #                               Insert SQL
 # =============================================================================
-
 params = urllib.parse.quote_plus('DRIVER={SQL Server Native Client 10.0};SERVER=sqlsrv04;DATABASE=BKI_Datastore;Trusted_Connection=yes')
 engine = create_engine('mssql+pyodbc:///?odbc_connect=%s' % params)
 dfCons.to_sql('ItemSegmentation', con=engine, schema='seg', if_exists='append', index=False)
 dfNoSales.to_sql('ItemSegmentation', con=engine, schema='seg', if_exists='append', index=False)
 dfQuan.to_sql('ItemSegmentationQuantiles', con=engine, schema='seg', if_exists='append', index=False)
 dfLog.to_sql('Log', con=engine, schema='dbo', if_exists='append', index=False)
+
