@@ -99,8 +99,8 @@ for dep in departments:
 dfNoSales = df.loc[df['Count'] == 0]
 
 dfNoSales.loc[:, 'Timestamp'] = now
-dfNoSales.loc[:, 'Score'] = dfNoSales['Days'].apply(lambda x: 0 if x > 90 else 1)
-dfNoSales.loc[dfNoSales['Udmeldelsesstatus'] == 'Er udgået', 'Score'] = 2
+dfNoSales.loc[:, 'Score'] = dfNoSales['Days'].apply(lambda x: 1 if x > 90 else 2)
+dfNoSales.loc[dfNoSales['Udmeldelsesstatus'] == 'Er udgået', 'Score'] = 0
 dfNoSales.loc[:, 'Type'] = dfNoSales['Department'] + '/' + dfNoSales['CType']
 dfNoSales.loc[:, 'ExecutionId'] = executionId
 dfNoSales.loc[:, 'Script'] = scriptName
