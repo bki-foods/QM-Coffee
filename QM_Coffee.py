@@ -13,9 +13,10 @@ db = 'TXprodDWH'
 con = pyodbc.connect('DRIVER={SQL Server};SERVER=' + server + ';DATABASE=' + db)
 query = """SELECT V.[Varenr] AS [ItemNo], V.[Udmeldelsesstatus] AS [Status]
         ,V.[Vareansvar] AS [Department], SVP.[KG], SVP.[Amount]
-        ,SVP.[Cost], ISNULL(SVP.[Count],0)  AS [Count]
-        ,V.[Dage siden oprettelse] AS [Days]
-		,CASE WHEN V.[Produktionskode] NOT LIKE '%HB%' THEN 'FORM' 
+        ,SVP.[Cost], V.[Dage siden oprettelse] AS [Days]
+		, CASE WHEN V.[Udmeldelsesstatus] = 'Er udgået'
+			THEN 0 ELSE ISNULL(SVP.[Count],0) END AS [Count]
+        ,CASE WHEN V.[Produktionskode] NOT LIKE '%HB%' THEN 'FORM' 
             ELSE 'HB' END AS [CType]
         ,V.[Udmeldelsesstatus]
         FROM [TXprodDWH].[dbo].[Vare_V] AS V
@@ -23,7 +24,7 @@ query = """SELECT V.[Varenr] AS [ItemNo], V.[Udmeldelsesstatus] AS [Status]
         SELECT [Varenr], SUM(ISNULL([AntalKgKaffe],0)) AS [KG]
         ,SUM([Oms excl. kampagneAnnonce]) AS [Amount]
         ,SUM([Kostbeløb]) AS [Cost], COUNT(*) AS [Count]
-        FROM [factSTATISTIK VAREPOST_V]
+        FROM [TXprodDWH].[dbo].[factSTATISTIK VAREPOST_V]
         WHERE [VarePosttype] IN (-1, 1)
             AND [Bogføringsdato] >= DATEADD(year, -1, getdate())
         GROUP BY [Varenr]
@@ -32,7 +33,7 @@ query = """SELECT V.[Varenr] AS [ItemNo], V.[Udmeldelsesstatus] AS [Status]
         WHERE V.[Varekategorikode] = 'FÆR KAFFE'
             AND V.[Varenr] NOT LIKE '9%'
             AND V.[Rabatnr] = 'Nej'
-            AND V.[Salgsvare] = 'Ja' """
+            AND V.[Salgsvare] = 'Ja'"""
 
 # Read query and create Profit calculation:
 df = pd.read_sql(query, con)
