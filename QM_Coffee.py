@@ -33,7 +33,7 @@ query = """SELECT V.[Varenr] AS [ItemNo], V.[Udmeldelsesstatus] AS [Status]
         WHERE V.[Varekategorikode] = 'FÆR KAFFE'
             AND V.[Varenr] NOT LIKE '9%'
             AND V.[Rabatnr] = 'Nej'
-            AND V.[Salgsvare] = 'Ja'"""
+            AND V.[Salgsvare] = 'Ja' """
 
 # Read query and create Profit calculation:
 df = pd.read_sql(query, con)
@@ -59,8 +59,8 @@ def qm_score(x, para, dic):
 now = datetime.datetime.now()
 scriptName = 'QM_Cofee.py'
 executionId = int(now.timestamp())
-departments = df.Department.unique()
 coffeeTypes = df.CType.unique()
+departments = df.Department.unique()
 
 # =============================================================================
 #                        SKUs with sales
@@ -73,26 +73,28 @@ for dep in departments:
         dfCof = dfSales.loc[dfSales['Department'] == dep]
         dfCof = dfCof.loc[dfCof['CType'] == cType]
         dfCof.rename(columns={'KG': 'Quantity', 'Profit': 'MonetaryValue'}, inplace=True)
+# If dataframe is empty, skip department & type
+        if len(dfCof) != 0:
 # Define quantiles for dfPro dataframe:
-        quantiles = dfCof.quantile(q=[0.25, 0.5, 0.75]).to_dict()
+            quantiles = dfCof.quantile(q=[0.25, 0.5, 0.75]).to_dict()
 # Identify quartiles per measure for each product:
-        dfCof.loc[:, 'QuantityQuartile'] = dfCof['Quantity'].apply(qm_score, args=('Quantity', quantiles,))
-        dfCof.loc[:, 'MonetaryQuartile'] = dfCof['MonetaryValue'].apply(qm_score, args=('MonetaryValue', quantiles,))
+            dfCof.loc[:, 'QuantityQuartile'] = dfCof['Quantity'].apply(qm_score, args=('Quantity', quantiles,))
+            dfCof.loc[:, 'MonetaryQuartile'] = dfCof['MonetaryValue'].apply(qm_score, args=('MonetaryValue', quantiles,))
 # Concetenate Quartile measurements to single string:
-        dfCof.loc[:, 'Score'] = dfCof.QuantityQuartile * 10 + dfCof.MonetaryQuartile
+            dfCof.loc[:, 'Score'] = dfCof.QuantityQuartile * 10 + dfCof.MonetaryQuartile
 # Create data stamps for dataframe and append to consolidated dataframe:
-        dfCof.loc[:, 'Timestamp'] = now
-        dfCof.loc[:, 'Type'] = dep + '/' + cType
-        dfCof.loc[:, 'ExecutionId'] = executionId
-        dfCof.loc[:, 'Script'] = scriptName
-        dfCons = pd.concat([dfCons, dfCof])
+            dfCof.loc[:, 'Timestamp'] = now
+            dfCof.loc[:, 'Type'] = dep + '/' + cType
+            dfCof.loc[:, 'ExecutionId'] = executionId
+            dfCof.loc[:, 'Script'] = scriptName
+            dfCons = pd.concat([dfCons, dfCof])
 # Append quantiles to dataframe
-        dfTemp = pd.DataFrame.from_dict(quantiles)
-        dfTemp.loc[:, 'Type'] = dep + '/' + cType
-        dfTemp.loc[:, 'Quantile'] = dfTemp.index
-        dfQuan = pd.concat([dfTemp, dfQuan], sort=False)
-        dfQuan.loc[:, 'Timestamp'] = now
-        dfQuan.loc[:, 'ExecutionId'] = executionId
+            dfTemp = pd.DataFrame.from_dict(quantiles)
+            dfTemp.loc[:, 'Type'] = dep + '/' + cType
+            dfTemp.loc[:, 'Quantile'] = dfTemp.index
+            dfQuan = pd.concat([dfTemp, dfQuan], sort=False)
+            dfQuan.loc[:, 'Timestamp'] = now
+            dfQuan.loc[:, 'ExecutionId'] = executionId
 
 # =============================================================================
 #                        SKUs without sales
