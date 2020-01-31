@@ -11,16 +11,14 @@ import pyodbc
 server = r'sqlsrv04\tx'
 db = 'TXprodDWH'
 con = pyodbc.connect('DRIVER={SQL Server};SERVER=' + server + ';DATABASE=' + db)
-query = """SELECT V.[Varenr] AS [ItemNo], V.[Udmeldelsesstatus] AS [Status]
-        ,V.[Vareansvar] AS [Department], SVP.[KG], SVP.[Amount]
+query = """ SELECT V.[Varenr] AS [ItemNo], V.[Udmeldelsesstatus] AS [Status]
+        ,V.[Nettovægt kg] * SVP.[Qty] AS [KG], SVP.[Amount]
         ,SVP.[Cost], V.[Dage siden oprettelse] AS [Days]
 		, CASE WHEN V.[Udmeldelsesstatus] = 'Er udgået'
 			THEN 0 ELSE ISNULL(SVP.[Count],0) END AS [Count]
-        ,CASE WHEN V.[Produktionskode] NOT LIKE '%HB%' THEN 'FORM' 
-            ELSE 'HB' END AS [CType]
         FROM [TXprodDWH].[dbo].[Vare_V] AS V
         LEFT JOIN (
-        SELECT [Varenr], SUM(ISNULL([AntalKgKaffe],0)) AS [KG]
+        SELECT [Varenr], -1 * SUM(ISNULL([Faktureret antal],0)) AS [Qty]
         ,SUM([Oms excl. kampagneAnnonce]) AS [Amount]
         ,SUM([Kostbeløb]) AS [Cost], COUNT(*) AS [Count]
         FROM [TXprodDWH].[dbo].[factSTATISTIK VAREPOST_V]
@@ -29,7 +27,7 @@ query = """SELECT V.[Varenr] AS [ItemNo], V.[Udmeldelsesstatus] AS [Status]
         GROUP BY [Varenr]
         ) AS SVP
         ON V.[Varenr] = SVP.[Varenr]
-        WHERE V.[Varekategorikode] = 'FÆR KAFFE'
+        WHERE V.[Varekategorikode] = 'TE'
             AND V.[Varenr] NOT LIKE '9%'
             AND V.[Salgsvare] = 'Ja' """
 
@@ -101,7 +99,7 @@ dfNoSales = df.loc[df['Count'] == 0]
 
 dfNoSales.loc[:, 'Timestamp'] = now
 dfNoSales.loc[:, 'Score'] = dfNoSales['Days'].apply(lambda x: 1 if x > 90 else 2)
-dfNoSales.loc[dfNoSales['Udmeldelsesstatus'] == 'Er udgået', 'Score'] = 0
+dfNoSales.loc[dfNoSales['Status'] == 'Er udgået', 'Score'] = 0
 dfNoSales.loc[:, 'Type'] = dfNoSales['Department'] + '/' + dfNoSales['CType']
 dfNoSales.loc[:, 'ExecutionId'] = executionId
 dfNoSales.loc[:, 'Script'] = scriptName
