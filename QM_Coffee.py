@@ -31,7 +31,6 @@ query = """SELECT V.[Varenr] AS [ItemNo], V.[Udmeldelsesstatus] AS [Status]
         ON V.[Varenr] = SVP.[Varenr]
         WHERE V.[Varekategorikode] = 'FÆR KAFFE'
             AND V.[Varenr] NOT LIKE '9%'
-            AND V.[Rabatnr] = 'Nej'
             AND V.[Salgsvare] = 'Ja' """
 
 # Read query and create Profit calculation:
