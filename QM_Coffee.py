@@ -18,7 +18,6 @@ query = """SELECT V.[Varenr] AS [ItemNo], V.[Udmeldelsesstatus] AS [Status]
 			THEN 0 ELSE ISNULL(SVP.[Count],0) END AS [Count]
         ,CASE WHEN V.[Produktionskode] NOT LIKE '%HB%' THEN 'FORM' 
             ELSE 'HB' END AS [CType]
-        ,V.[Udmeldelsesstatus]
         FROM [TXprodDWH].[dbo].[Vare_V] AS V
         LEFT JOIN (
         SELECT [Varenr], SUM(ISNULL([AntalKgKaffe],0)) AS [KG]
