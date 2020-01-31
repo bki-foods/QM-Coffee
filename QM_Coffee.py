@@ -12,13 +12,15 @@ server = r'sqlsrv04\tx'
 db = 'TXprodDWH'
 con = pyodbc.connect('DRIVER={SQL Server};SERVER=' + server + ';DATABASE=' + db)
 query = """ SELECT V.[Varenr] AS [ItemNo], V.[Udmeldelsesstatus] AS [Status]
-        ,V.[Nettovægt kg] * SVP.[Qty] AS [KG], SVP.[Amount]
+        ,V.[Vareansvar] AS [Department], SVP.[KG], SVP.[Amount]
         ,SVP.[Cost], V.[Dage siden oprettelse] AS [Days]
 		, CASE WHEN V.[Udmeldelsesstatus] = 'Er udgået'
 			THEN 0 ELSE ISNULL(SVP.[Count],0) END AS [Count]
+        ,CASE WHEN V.[Produktionskode] NOT LIKE '%HB%' THEN 'FORM' 
+            ELSE 'HB' END AS [CType]
         FROM [TXprodDWH].[dbo].[Vare_V] AS V
         LEFT JOIN (
-        SELECT [Varenr], -1 * SUM(ISNULL([Faktureret antal],0)) AS [Qty]
+        SELECT [Varenr], SUM(ISNULL([AntalKgKaffe],0)) AS [KG]
         ,SUM([Oms excl. kampagneAnnonce]) AS [Amount]
         ,SUM([Kostbeløb]) AS [Cost], COUNT(*) AS [Count]
         FROM [TXprodDWH].[dbo].[factSTATISTIK VAREPOST_V]
@@ -27,7 +29,7 @@ query = """ SELECT V.[Varenr] AS [ItemNo], V.[Udmeldelsesstatus] AS [Status]
         GROUP BY [Varenr]
         ) AS SVP
         ON V.[Varenr] = SVP.[Varenr]
-        WHERE V.[Varekategorikode] = 'TE'
+        WHERE V.[Varekategorikode] = 'FÆR KAFFE'
             AND V.[Varenr] NOT LIKE '9%'
             AND V.[Salgsvare] = 'Ja' """
 
