@@ -121,7 +121,7 @@ dfQuan = dfQuan[ColsQuan]
 # =============================================================================
 #                               Dataframe for logging
 # =============================================================================
-dfLog = pd.DataFrame(data= {'Date':now, 'Event':scriptName}, index=[0])
+dfLog = pd.DataFrame(data= {'Date':now, 'Event':scriptName, 'Note':'Execution id: ' + str(executionId)}, index=[0])
 # =============================================================================
 #                               Insert SQL
 # =============================================================================
