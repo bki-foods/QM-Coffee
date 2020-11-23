@@ -125,7 +125,7 @@ dfLog = pd.DataFrame(data= {'Date':now, 'Event':scriptName, 'Note':'Execution id
 # =============================================================================
 #                               Insert SQL
 # =============================================================================
-params = urllib.parse.quote_plus('DRIVER={SQL Server Native Client 10.0};SERVER=sqlsrv04;DATABASE=BKI_Datastore;Trusted_Connection=yes')
+params = urllib.parse.quote_plus('DRIVER={SQL Server Native Client 11.0};SERVER=sqlsrv04;DATABASE=BKI_Datastore;Trusted_Connection=yes')
 engine = create_engine('mssql+pyodbc:///?odbc_connect=%s' % params)
 dfCons.to_sql('ItemSegmentation', con=engine, schema='seg', if_exists='append', index=False)
 dfNoSales.to_sql('ItemSegmentation', con=engine, schema='seg', if_exists='append', index=False)
