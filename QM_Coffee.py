@@ -31,7 +31,8 @@ query = """ SELECT V.[Varenr] AS [ItemNo], V.[Udmeldelsesstatus] AS [Status]
         ON V.[Varenr] = SVP.[Varenr]
         WHERE V.[Varekategorikode] = 'FÆR KAFFE'
             AND V.[Varenr] NOT LIKE '9%'
-            AND V.[Salgsvare] = 'Ja' """
+            AND V.[Salgsvare] = 'Ja'
+			AND V.[DW_Account] = 'BKI foods a/s' """
 
 # Read query and create Profit calculation:
 df = pd.read_sql(query, con)
