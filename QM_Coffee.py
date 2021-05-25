@@ -24,7 +24,7 @@ query = """ SELECT V.[Varenr] AS [ItemNo], V.[Udmeldelsesstatus] AS [Status]
         ,SUM([Oms excl. kampagneAnnonce]) AS [Amount]
         ,SUM([Kostbeløb]) AS [Cost], COUNT(*) AS [Count]
         FROM [TXprodDWH].[dbo].[factSTATISTIK VAREPOST_V]
-        WHERE [VarePosttype] IN (-1, 1)
+        WHERE [VarePosttype] = 1
             AND [Bogføringsdato] >= DATEADD(year, -1, getdate())
         GROUP BY [Varenr]
         ) AS SVP
